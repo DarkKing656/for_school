@@ -1,0 +1,200 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+#define MAX_BUFFER_SIZE 2048
+
+void display_help();
+void display_file(int fd, int bytes, int opt_n, int opt_b, char *number_format);
+void display_stdin(int bytes, int opt_n, int opt_b, char *number_format);
+
+int main(int argc, char **argv) {
+    // По умолчанию, берём вывод из стандартного ввода
+    int fd = STDIN_FILENO;
+
+    // Флаги опций по умолчанию
+    int opt_s = 0, opt_n = 0, opt_b = 0, opt_h = 0;
+    
+    // Значения опций по умолчанию
+    int bytes = MAX_BUFFER_SIZE;
+    char *number_format = "%d\t";
+
+    // Использовать getopt для обработки аргументов командной строки
+    int opt;
+    while((opt = getopt(argc, argv, "nsb:N:h")) != -1) {
+        switch(opt) {
+            case 'n':
+                opt_n = 1;
+                break;
+            case 's':
+                opt_s = 1;
+                break;
+            case 'b':
+                opt_b = 1;
+                break;
+            case 'N':
+                number_format = optarg;
+                break;
+            case 'h':
+                opt_h = 1;
+                break;
+            default:
+                printf("Invalid option found. Use -h option for help.\n");
+                return 1;
+        }
+    }
+
+    // Если установлен флаг помощи, выводим справку и выходим
+    if(opt_h) {
+        display_help();
+        return 0;
+    }
+
+    // Если указаны аргументы, используем первый из них как имя файла для открытия
+    if(optind < argc) {
+        fd = open(argv[optind], O_RDONLY);
+        if(fd == -1) {
+            perror("open");
+            return 1;
+        }
+    }
+
+    // Выводим содержимое файла или стандартного ввода
+    if(opt_s) {
+        display_stdin(bytes, opt_n, opt_b, number_format);
+    } else {
+        struct stat st;
+        fstat(fd, &st);
+
+        if(S_ISDIR(st.st_mode)) {
+            printf("Error: cannot display contents of a directory.\n");
+        } else if(S_ISREG(st.st_mode)) {
+            display_file(fd, bytes, opt_n, opt_b, number_format);
+        }
+    }
+
+    // Закрываем файловый дескриптор
+    close(fd);
+
+    return 0;
+}
+
+/**
+ * Выводит справочную информацию.
+ */
+void display_help() {
+    printf("Usage: mycat [options] [filename]\n");
+    printf("Display contents of a file or standard input.\n");
+    printf("\n");
+    printf("Options:\n");
+    printf("  -n          Number all output lines.\n");
+    printf("  -s          Squeeze multiple adjacent empty lines into one.\n");
+    printf("  -b          Number the non-blank output lines.\n");
+    printf("  -N format   Set the line number format string (default: '%d\\t').\n");
+    printf("  -h          Display this help message.\n");
+}
+
+/**
+ * Выводит содержимое файла на экран.
+ *
+ * @param fd            файловый дескриптор
+ * @param bytes         количество байт, которые нужно прочитать
+ * @param opt_n         флаг "нумеровать все строки"
+ * @param opt_b         флаг "нумеровать только непустые строки"
+ * @param number_format формат номеров строк
+ */
+void display_file(int fd, int bytes, int opt_n, int opt_b, char *number_format) {
+    int line_number = 1;
+    char buffer[MAX_BUFFER_SIZE];
+    ssize_t bytes_read = 0;
+    int prev_blank = 0;
+
+    // Читаем содержимое файла
+    while((bytes_read = read(fd, buffer, bytes)) > 0) {
+        for(int i = 0; i < bytes_read; i++) {
+            // Если встретили символ переноса строки, увеличиваем счетчик номера строки
+            if(buffer[i] == '\n') {
+                line_number++;
+            }
+            // Проверяем нужно ли вывести номер строки
+            if(opt_n || (opt_b && !prev_blank && buffer[i] != '\n')) {
+                printf(number_format, line_number);
+            }
+            // Проверяем нужно ли "сжать" пустые строки
+            if(!opt_s || (opt_s && buffer[i] != '\n') || (opt_s && prev_blank == 0)) {
+                putchar(buffer[i]);
+            }
+            // Если встретили пустую строку, говорим об этом
+if(opt_b && buffer[i] != '\n' && !prev_blank) {
+                prev_blank = 1;
+            } else {
+                prev_blank = 0;
+            }
+        }
+    }
+
+    // Если была ошибка чтения
+    if(bytes_read == -1) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    // Если файл не заканчивается символом переноса строки, то надо вывести номер последней строки
+    if(opt_n || (opt_b && !prev_blank)) {
+        printf(number_format, line_number);
+    }
+}
+
+/**
+ * Выводит содержимое стандартного ввода на экран.
+ *
+ * @param bytes         количество байт, которые нужно прочитать
+ * @param opt_n         флаг "нумеровать все строки"
+ * @param opt_b         флаг "нумеровать только непустые строки"
+ * @param number_format формат номеров строк
+ */
+void display_stdin(int bytes, int opt_n, int opt_b, char *number_format) {
+    int line_number = 1;
+    char buffer[MAX_BUFFER_SIZE];
+    ssize_t bytes_read = 0;
+    int prev_blank = 0;
+
+    // Читаем содержимое стандартного ввода
+    while((bytes_read = read(STDIN_FILENO, buffer, bytes)) > 0) {
+        for(int i = 0; i < bytes_read; i++) {
+            // Если встретили символ переноса строки, увеличиваем счетчик номера строки
+            if(buffer[i] == '\n') {
+                line_number++;
+            }
+            // Проверяем нужно ли вывести номер строки
+            if(opt_n || (opt_b && !prev_blank && buffer[i] != '\n')) {
+                printf(number_format, line_number);
+            }
+            // Проверяем нужно ли "сжать" пустые строки
+            if(!opt_s || (opt_s && buffer[i] != '\n') || (opt_s && prev_blank == 0)) {
+                putchar(buffer[i]);
+            }
+            // Если встретили пустую строку, говорим об этом
+            if(opt_b && buffer[i] != '\n' && !prev_blank) {
+                prev_blank = 1;
+            } else {
+                prev_blank = 0;
+            }
+        }
+    }
+
+    // Если была ошибка чтения
+    if(bytes_read == -1) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    // Если входные данные не заканчиваются символом переноса строки, то надо вывести номер последней строки
+    if(opt_n || (opt_b && !prev_blank)) {
+        printf(number_format, line_number);
+    }
+}
