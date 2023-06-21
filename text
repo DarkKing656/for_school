@@ -1,21 +1,82 @@
- if (ch == '\n') { // конец строки
-            if (is_empty_line) { // пропуск пустых строк при флаге -s
+void print_file(char *filename, int b_flag, int e_flag, int n_flag, int s_flag, int t_flag) {
+    FILE *fp;
+    char ch;
+    int line_count = 1, is_whitespace = 0, is_first_char = 1, is_empty_line=1;
+    if ((fp = fopen(filename, "r")) == NULL) { // проверка наличия файла
+        printf("cat: %s: No such file or directory\n", filename);
+        exit(1);
+    }
+    while ((ch = fgetc(fp)) != EOF) {
+        if (is_first_char == 1) {
+            if (n_flag == 1) { // вывод номера строки
+                printf("%6d  ", line_count);
+                line_count++;
+            }
+            is_first_char = 0;
+        }
+        
+        
+        
+            /* code */
+        
+        
+        if (ch == '\n') { // конец строки
+            if (is_empty_line==1) { // пропуск пустых строк при флаге -s
+               
                 if (b_flag == 1) { // вывод непустых строк с номерами
                     if (!is_whitespace) {
-                        printf("\n");
+                      // printf("\n");
                     } else {
-                        printf("%c", ch);
+                       // printf("%c", ch);
                     }
                     is_whitespace = 1;
                 }
                 is_first_char = 1;
-            } else if (b_flag == 1) { // вывод пустых строк без номеров при флаге -b
-                printf("\n");
+            } /*else if (b_flag == 1) { // вывод пустых строк без номеров при флаге -b
+                //printf("\n");
                 is_whitespace = 1;
                 is_first_char = 1;
             } else {
                 printf("%c", ch); // вывод пустых строк без изменений
                 is_first_char = 1;
-            }
+            }*/
             is_empty_line = 1;
+        
+        {if ((is_first_char==1) &&(is_empty_line==1)){
+            printf("%6d  ", line_count);
+            line_count++;}
+            is_first_char=0;
+            is_empty_line=0;
+        }
+        }
+            if (t_flag == 1) { // преобразование символов
+                if (ch == '\t') {
+                    printf("^I");
+                } else {
+                    printf("%c", ch);
+                }
+            } else if ((s_flag == 1) && (ch == ' ' || ch == '\t')) { // замена табуляций и пробелов
+                if (!is_whitespace) {
+                    printf(" ");
+                    is_whitespace = 1;
+                }
+            } else if ((e_flag==1)  && (ch == '$')) { // вывод знака "$"
+                printf("^");
+            } else if ((e_flag==1)  && (ch == '\n')) { // вывод знака "$"
+                printf("$\n");
+                is_first_char = 1;
+            } else {
+                printf("%c", ch);
+            }
+
+            if (is_whitespace == 1 && s_flag == 1) { // вывод непустых пробелов
+                if (ch != ' ' && ch != '\t') {
+                    printf("%c", ch);
+                    is_whitespace = 0;
+                }
+            }
+        
+    }
+    fclose(fp);
+}
         } 
