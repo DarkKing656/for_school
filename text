@@ -1,4 +1,4 @@
-vvoid print_file(char *filename, int b_flag, int e_flag, int n_flag, int s_flag, int t_flag) {
+void print_file(char *filename, int b_flag, int e_flag, int n_flag, int s_flag, int t_flag) {
     FILE *fp;
     char ch;
     int line_count = 1, is_whitespace = 0, is_first_char = 1, is_empty_line = 1;
