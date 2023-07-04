@@ -2,19 +2,51 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <regex.h>
 
 #define MAX_LINE_LENGTH 1000
 
 int main(int argc, char *argv[]) {
     int opt;
+    int case_insensitive = 0;
+    int inverse_match = 0;
+    int count_only = 0;
+    int print_filename_only = 0;
+    int line_number = 0;
+    int quiet_mode = 0;
+    int print_match_only = 0;
+
     char *search_string = NULL;
-    FILE *file_ptr = NULL;
-    char line[MAX_LINE_LENGTH];
+    regex_t regex;
+    int regex_option = 0;
 
     // Обработка опций командной строки с помощью getopt
-    while ((opt = getopt(argc, argv, "s:")) != -1) {
+    while ((opt = getopt(argc, argv, "isvclf:ne:")) != -1) {
         switch (opt) {
+            case 'i':
+                case_insensitive = 1;
+                break;
             case 's':
+                quiet_mode = 1;
+                break;
+            case 'v':
+                inverse_match = 1;
+                break;
+            case 'c':
+                count_only = 1;
+                break;
+            case 'l':
+                print_filename_only = 1;
+                break;
+            case 'n':
+                line_number = 1;
+                break;
+            case 'f':
+                regex_option = 1;
+                search_string = read_regex_from_file(optarg);
+                break;
+            case 'e':
+                regex_option = 1;
                 search_string = optarg;
                 break;
             default:
@@ -28,12 +60,13 @@ int main(int argc, char *argv[]) {
         if (optind < argc) {
             search_string = argv[optind++];
         } else {
-            printf("Использование: ./my_grep [-s <строка_поиска>] [<файл>]\n");
+            printf("Использование: ./my_grep [-i|-s|-v|-c|-l|-n] [-f <файл_с_регулярным_выражением>|-e <регулярное_выражение>] [<файл>]\n");
             return 1;
         }
     }
 
     // Если указан файл, открываем его, иначе используем стандартный ввод
+    FILE *file_ptr;
     if (optind < argc) {
         file_ptr = fopen(argv[optind], "r");
         if (file_ptr == NULL) {
@@ -44,11 +77,67 @@ int main(int argc, char *argv[]) {
         file_ptr = stdin;
     }
 
-    // Поиск строки в файле
-    while (fgets(line, MAX_LINE_LENGTH, file_ptr) != NULL) {
-        if (strstr(line, search_string) != NULL) {
-            printf("%s", line);
+    // Подготовка регулярного выражения, если используется флаг -f или -e
+    if (regex_option) {
+        int compile_status;
+        if (case_insensitive) {
+            compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
+        } else {
+            compile_status = regcomp(&regex, search_string, REG_EXTENDED);
         }
+        if (compile_status) {
+            char error_message[MAX_LINE_LENGTH];
+            regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
+            printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
+            return 1;
+        }
+    }
+
+    // Поиск строки в файле
+    int match_count = 0;
+    while (fgets(line, MAX_LINE_LENGTH, file_ptr) != NULL) {
+        int match_status;
+        if (regex_option) {
+            match_status = regexec(&regex, line, 0, NULL, 0);
+        } else {
+            if (case_insensitive) {
+                match_status = strcasestr(line, search_string) != NULL ? 0 : REG_NOMATCH;
+            } else {
+                match_status = strstr(line, search_string) != NULL ? 0 : REG_NOMATCH;
+            }
+        }
+
+        if ((!inverse_match && match_status == 0) || (inverse_match && match_status == REG_NOMATCH)) {
+            // Печать результата в соответствии с флагами
+            match_count++;
+
+            if (count_only) {
+                continue;
+            }
+
+            if (print_filename_only) {
+                if (!quiet_mode) {
+                    printf("%s\n", argv[optind]);
+                }
+                continue;
+            }
+
+            if (quiet_mode) {
+                return 0;
+            }
+
+            if (line_number) {
+                printf("%s:%d:", argv[optind], line_number);
+            }
+
+            printf("%s", line);
+
+            if (print_match_only) {
+                break;
+            }
+        }
+
+        line_number++;
     }
 
     // Закрываем файл, если он был открыт
@@ -56,6 +145,15 @@ int main(int argc, char *argv[]) {
         fclose(file_ptr);
     }
 
+    // Освобождаем регулярное выражение, если использовался флаг -f или -e
+    if (regex_option) {
+        regfree(&regex);
+    }
+
+    // Печать общего количества совпадений, если используется флаг -c
+    if (count_only) {
+        printf("Общее количество совпадений: %d\n", match_count);
+    }
+
     return 0;
 }
-
