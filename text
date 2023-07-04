@@ -6,6 +6,28 @@
 
 #define MAX_LINE_LENGTH 1000
 
+char* read_regex_from_file(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Не удалось открыть файл %s\n", filename);
+        return NULL;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* regex_string = (char*) malloc(file_size + 1);  // выделяем память для строки с регулярным выражением
+    if (regex_string != NULL) {
+        size_t new_len = fread(regex_string, sizeof(char), file_size, file);
+        regex_string[new_len] = '\0';  // добавляем завершающий ноль к строке
+    }
+
+    fclose(file);
+
+    return regex_string;
+}
+
 int main(int argc, char *argv[]) {
     int opt;
     int case_insensitive = 0;
