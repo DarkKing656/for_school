@@ -1,3 +1,45 @@
+
+void search_file(FILE* file_ptr, const char* search_string, int case_insensitive, 
+                int inverse_match, int count_only, int print_filename_only, int line_number) {
+    
+    char line[MAX_LINE_LENGTH];
+    int match_count = 0;
+    int current_line_number = 0;
+
+    while (fgets(line, MAX_LINE_LENGTH, file_ptr)) {
+        current_line_number++;
+
+        char* match_ptr;
+        if (case_insensitive) {
+            match_ptr = strcasestr(line, search_string);
+        } else {
+            match_ptr = strstr(line, search_string);
+        }
+
+        int match_found = (match_ptr != NULL);
+        if (match_found != inverse_match) {
+            match_count++;
+            if (print_filename_only) {
+                if (line_number) {
+                    printf("%s:%d\n", file_ptr == stdin ? "stdin" : "file", current_line_number);
+                } else {
+                    printf("%s\n", file_ptr == stdin ? "stdin" : "file");
+                }
+                break;
+            }
+            if (line_number) {
+                printf("%s:%d:%s", file_ptr == stdin ? "stdin" : "file", current_line_number, line);
+            } else {
+                printf("%s", line);
+            }
+        }
+    }
+
+    if (count_only) {
+        printf("Количество совпадений: %d\n", match_count);
+    }
+}
+
 int main(int argc, char *argv[]) {
     int opt;
     int case_insensitive = 0;
@@ -54,7 +96,11 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
-    
+    if(optind<argc){
+        for(int i=optind;i<argc;i++){
+            multiple_files++;
+        }
+    }
     if (optind < argc) {
         for (int i = optind; i < argc; i++) {
             FILE *file_ptr = fopen(argv[i], "r");
