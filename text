@@ -16,6 +16,8 @@ int main(int argc, char *argv[]) {
     int quiet_mode = 0;
     int print_match_only = 0;
 
+    char line[MAX_LINE_LENGTH];  // Добавлено объявление переменной line
+
     char *search_string = NULL;
     regex_t regex;
     int regex_option = 0;
@@ -93,7 +95,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Поиск строки в файле
     int match_count = 0;
     while (fgets(line, MAX_LINE_LENGTH, file_ptr) != NULL) {
         int match_status;
@@ -108,7 +109,6 @@ int main(int argc, char *argv[]) {
         }
 
         if ((!inverse_match && match_status == 0) || (inverse_match && match_status == REG_NOMATCH)) {
-            // Печать результата в соответствии с флагами
             match_count++;
 
             if (count_only) {
@@ -136,23 +136,13 @@ int main(int argc, char *argv[]) {
                 break;
             }
         }
-
+        
         line_number++;
     }
-
-    // Закрываем файл, если он был открыт
-    if (file_ptr != stdin) {
-        fclose(file_ptr);
-    }
-
-    // Освобождаем регулярное выражение, если использовался флаг -f или -e
+    
+    // Освобождение ресурсов, если используется регулярное выражение
     if (regex_option) {
         regfree(&regex);
-    }
-
-    // Печать общего количества совпадений, если используется флаг -c
-    if (count_only) {
-        printf("Общее количество совпадений: %d\n", match_count);
     }
 
     return 0;
