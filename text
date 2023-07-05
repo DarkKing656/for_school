@@ -1,80 +1,28 @@
-void search_file(FILE* file_ptr, const char* search_string, int case_insensitive, 
-                int inverse_match, int count_only, int print_filename_only, int line_number, 
-                int multiple_files, const char* name, int regex_option, int only_searched_str) {
+char* find_matching_substring(const char* big_str, const char* small_str, int case_insensitive) {
+    // Получаем длины строк
+    size_t big_len = strlen(big_str);
+    size_t small_len = strlen(small_str);
+  
+    // Проверяем, что размерность маленькой строки меньше или равна большой строке
+    if (small_len <= big_len) {
+        return "Маленькая строка не может быть длиннее большой строки.\n";
     
-    char line[MAX_LINE_LENGTH];
-    int match_count = 0;
-    int current_line_number = 0;
-    regex_t regex;
-
-    if (regex_option) {
-        int compile_status;
-        if (case_insensitive) {
-            compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
-        } else {
-            compile_status = regcomp(&regex, search_string, REG_EXTENDED);
-        }
-        if (compile_status) {
-            char error_message[MAX_LINE_LENGTH];
-            regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
-            printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
-            return;
-        }
+  
+    // Выполняем сравнение с учетом регистра или без него в зависимости от значения case_insensitive
+    int match_found = 0;
+    if (case_insensitive) {
+        match_found = strcasestr(big_str, small_str) != NULL;
+    } else {
+        match_found = strstr(big_str, small_str) != NULL;
     }
-
-    while (fgets(line, MAX_LINE_LENGTH, file_ptr)) {
-        current_line_number++;
-
-        int match_found;
-        if (regex_option) {
-            match_found = (regexec(&regex, line, 0, NULL, 0) == 0);
-        } else {
-            char* match_ptr = (case_insensitive) ? strcasestr(line, search_string) : strstr(line, search_string);
-            match_found = (match_ptr != NULL);
-        }
-
-        if (match_found != inverse_match) {
-            match_count++;
-            if (!count_only){
-            if (print_filename_only) {
-                if (line_number) {
-                    printf("%s:%d\n", name, current_line_number);
-                } else if (multiple_files > 1) {
-                    printf("%s\n", name);
-                }
-                break;
-            }
-            if(only_searched_str){
-                 char* res=find_matching_substring(line,search_string,case_insensitive);
-                 strcpy(line, res);
-                 free(res);
-            }
-            if (line_number) {
-                if (multiple_files > 1) {
-                    printf("%s:%d:%s", name, current_line_number, line);
-                } else {
-                    printf("%d:%s", current_line_number, line);
-                }
-            } else {
-                if (multiple_files > 1) {
-                    printf("%s:%s", name, line);
-                } else {
-                    printf("%s", line);
-                }
-            }
-            }
-        }
+  
+    // Если совпадение найдено, возвращаем найденную подстроку
+    if (match_found) {
+        char* found_substring = strstr(big_str, small_str);
+        char* result = malloc(small_len + 1);
+        strncpy(result, found_substring, small_len);
+        result[small_len] = '\0';
+        return result;
     }
-
-    if (count_only) {
-        if(multiple_files>1){
-            printf("%s:%d\n",name,match_count);
-        }  else  {
-        printf("%d\n", match_count);
-        }
-    }
-
-    if (regex_option) {
-        regfree(&regex);
     }
 }
