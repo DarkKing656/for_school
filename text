@@ -1,9 +1,23 @@
 void search_file(FILE* file_ptr, const char* search_string, int case_insensitive, 
-                int inverse_match, int count_only, int print_filename_only, int line_number, int multiple_files, const char* name) {
+                int inverse_match, int count_only, int print_filename_only, int line_number, int multiple_files, const char* name, int regex_option) {
     
     char line[MAX_LINE_LENGTH];
     int match_count = 0;
     int current_line_number = 0;
+    regex_t regex;
+    if (regex_option) {
+    int compile_status;
+    if (case_insensitive) {
+        compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
+    } else {
+        compile_status = regcomp(&regex, search_string, REG_EXTENDED);
+    }
+    if (compile_status) {
+        char error_message[MAX_LINE_LENGTH];
+        regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
+        printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
+        return;
+    }}
 
     while (fgets(line, MAX_LINE_LENGTH, file_ptr)) {
         current_line_number++;
@@ -52,17 +66,8 @@ void search_file(FILE* file_ptr, const char* search_string, int case_insensitive
     if (count_only) {
         printf("Количество совпадений: %d\n", match_count);
     }
+    if (regex_option) {
+        regfree(&regex);
+    }
+
 }
-if (regex_option) {
-    int compile_status;
-    if (case_insensitive) {
-        compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
-    } else {
-        compile_status = regcomp(&regex, search_string, REG_EXTENDED);
-    }
-    if (compile_status) {
-        char error_message[MAX_LINE_LENGTH];
-        regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
-        printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
-        return;
-    }
