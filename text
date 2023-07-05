@@ -1,30 +1,5 @@
-
-char* find_matching_substring(const char* big_str, const char* small_str, int case_insensitive) {
-    // Получаем длины строк
-    size_t big_len = strlen(big_str);
-    size_t small_len = strlen(small_str);
-  
-    // Проверяем, что размерность маленькой строки меньше или равна большой строке
-    if (small_len > big_len) {
-        return "Маленькая строка не может быть длиннее большой строки.\n";
-    }
-  
-    // Выполняем сравнение с учетом регистра или без него в зависимости от значения case_insensitive
-    int match_found = 0;
-    if (case_insensitive) {
-        match_found = strcasestr(big_str, small_str) != NULL;
-    } else {
-        match_found = strstr(big_str, small_str) != NULL;
-    }
-  
-    // Если совпадение найдено, возвращаем найденную подстроку
-    if (match_found) {
-        char* found_substring = strstr(big_str, small_str);
-        char* result = malloc(small_len + 1);
-        strncpy(result, found_substring, small_len);
-        result[small_len] = '\0';
-        return result;
-    } else {
-        return "Совпадений не найдено.\n";
-    }
-}
+char line[1000];
+            if(only_searched_str){
+                 char* res=find_matching_substring(line,search_string,case_insensitive);
+                 line=res;
+            }
