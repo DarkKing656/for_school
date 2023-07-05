@@ -53,3 +53,16 @@ void search_file(FILE* file_ptr, const char* search_string, int case_insensitive
         printf("Количество совпадений: %d\n", match_count);
     }
 }
+if (regex_option) {
+    int compile_status;
+    if (case_insensitive) {
+        compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
+    } else {
+        compile_status = regcomp(&regex, search_string, REG_EXTENDED);
+    }
+    if (compile_status) {
+        char error_message[MAX_LINE_LENGTH];
+        regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
+        printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
+        return;
+    }
