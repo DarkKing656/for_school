@@ -1,96 +1,55 @@
-int main(int argc, char *argv[]) {
-    int opt;
-    int case_insensitive = 0;
-    int inverse_match = 0;
-    int count_only = 0;
-    int print_filename_only = 0;
-    int line_number = 0;
-    int quiet_mode = 0;
-   // int print_match_only = 0;
-    int multiple_files=0;
-    char *search_string = NULL;
-    regex_t regex;
-    int regex_option = 0;
+void search_file(FILE* file_ptr, const char* search_string, int case_insensitive, 
+                int inverse_match, int count_only, int print_filename_only, int line_number, int multiple_files, const char* name) {
+    
+    char line[MAX_LINE_LENGTH];
+    int match_count = 0;
+    int current_line_number = 0;
 
-    while ((opt = getopt(argc, argv, "isvclf:ne:")) != -1) {
-        switch (opt) {
-            case 'i':
-                case_insensitive = 1;
-                break;
-            case 's':
-                quiet_mode = 1;
-                break;
-            case 'v':
-                inverse_match = 1;
-                break;
-            case 'c':
-                count_only = 1;
-                break;
-            case 'l':
-                print_filename_only = 1;
-                break;
-            case 'n':
-                line_number = 1;
-                break;
-            case 'f':
-                regex_option = 1;
-                search_string = read_regex_from_file(optarg);
-                break;
-            case 'e':
-                regex_option = 1;
-                search_string = optarg;
-                break;
-            default:
-                printf("Неизвестная опция: -%c\n", opt);
-                return 1;
-        }
-    }
+    while (fgets(line, MAX_LINE_LENGTH, file_ptr)) {
+        current_line_number++;
 
-    if (search_string == NULL) {
-        if (optind < argc) {
-            search_string = argv[optind++];
+        char* match_ptr;
+        if (case_insensitive) {
+            match_ptr = strcasestr(line, search_string);
         } else {
-            printf("Использование: ./my_grep [-i|-s|-v|-c|-l|-n] [-f <файл_с_регулярным_выражением>|-e <регулярное_выражение>] [<файл>]\n");
-            return 1;
+            match_ptr = strstr(line, search_string);
         }
-    }
-    if(optind<argc){
-        for(int i=optind;i<argc;i++){
-            multiple_files++;
-        }
-    }
-    if (optind < argc) {
-        for (int i = optind; i < argc; i++) {
-            FILE *file_ptr = fopen(argv[i], "r");
-            if (file_ptr == NULL) {
-                printf("Не удалось открыть файл %s\n", argv[i]);
-                return 1;
-            }
-            
-            if (regex_option) {
-                int compile_status;
-                if (case_insensitive) {
-                    compile_status = regcomp(&regex, search_string, REG_EXTENDED | REG_ICASE);
-                } else {
-                    compile_status = regcomp(&regex, search_string, REG_EXTENDED);
-                }
-                if (compile_status) {
-                    char error_message[MAX_LINE_LENGTH];
-                    regerror(compile_status, &regex, error_message, MAX_LINE_LENGTH);
-                    printf("Ошибка компиляции регулярного выражения: %s\n", error_message);
-                    return 1;
-                }
-            }
 
-            search_file(file_ptr, search_string, case_insensitive, inverse_match, 
-                        count_only, print_filename_only, line_number,multiple_files,argv[i]);
-            
-            fclose(file_ptr);
+        int match_found = (match_ptr != NULL);
+        if (match_found != inverse_match) {
+            match_count++;
+            if (print_filename_only) {
+                if (line_number) {
+                    
+                    printf("%s:%d\n", name, current_line_number);
+                    
+                } else {if(multiple_files>1){
+                    printf("%s\n", name);
+                }
+                }
+                break;
+            }
+            if (line_number) {
+                if(multiple_files>1){
+
+                
+                printf("%s:%d:%s", name, current_line_number, line);
+                }
+                else{
+                    printf("%d:%s", current_line_number,line);
+                }
+            } else {
+                if(multiple_files>1){
+                    printf("%s:%s",name,line);
+                } 
+                else {
+                printf("%s", line);
+                }
+            }
         }
-    } else {
-        search_file(stdin, search_string, case_insensitive, inverse_match, 
-                    count_only, print_filename_only, line_number,0,NULL);
     }
 
-    return 0;
+    if (count_only) {
+        printf("Количество совпадений: %d\n", match_count);
+    }
 }
