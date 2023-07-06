@@ -1,13 +1,9 @@
 
-echo "$decor" "CAT 1 -b"
-if [ "$show_commands" = true ]; then
-  echo "$(cat -b "$filename")" "$("./s21_cat" -b "$filename")" -s $q
-fi
-diff_output=$(diff <(cat -b "$filename") <("./s21_cat" -b "$filename") -s $q)
+diff_output=$(diff <(cat -b "$filename") <("./s21_cat" -b "$filename"))
 
 line_num=0
 while IFS= read -r diff_line; do
   if [[ $diff_line == *"<"* ]]; then
-    echo "Строка $((++line_num)): $(echo "$diff_line" | cut -c2-)"
+    echo "Строка $((++line_num))"
   fi
 done <<< "$diff_output"
