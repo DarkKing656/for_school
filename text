@@ -1,40 +1,15 @@
-void addNewlineIfNeeded() {
-    FILE* file = fopen("output.txt", "a+"); // Открываем файл в режиме добавления и чтения
+void checkNewline(const char* line) {
+    int hasNewline = 0;
 
-    if (file == NULL) {
-        printf("Ошибка открытия файла.\n");
-        return;
+    // Проверяем каждый символ строки
+    for (int i = 0; i < strlen(line); i++) {
+        if (line[i] == '\n') {
+            hasNewline = 1; // Обнаружен символ "\n"
+            break;
+        }
     }
 
-    fseek(file, 0, SEEK_END); // Перейти в конец файла
-
-    long file_size = ftell(file); // Получить размер файла
-
-    if (file_size == 0) {
-        // Файл пуст, добавляем символ новой строки и завершаем функцию
-        fprintf(file, "\n");
-        fclose(file);
-        remove("output.txt"); // Удаление файла
-        return;
+    if (!hasNewline) {
+        printf("\n"); // Выводим символ новой строки
     }
-
-    fseek(file, -1, SEEK_END); // Перейти к последнему символу файла
-
-    char last_char;
-    fread(&last_char, sizeof(char), 1, file); // Чтение последнего символа
-
-    // Проверяем, является ли последний символ пробельным
-    // Игнорируем пробелы, табуляции и символы новой строки
-    while (file_size > 0 && isspace(last_char)) {
-        fseek(file, -2, SEEK_CUR); // Перемещаемся на предыдущий символ
-        fread(&last_char, sizeof(char), 1, file); // Чтение предыдущего символа
-        file_size--;
-    }
-
-    if (!isspace(last_char)) {
-        fprintf(file, "\n"); // Добавление символа новой строки
-    }
-
-    fclose(file);
-    remove("output.txt"); // Удаление файла
 }
