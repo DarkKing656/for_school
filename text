@@ -3,11 +3,11 @@ echo "$decor" "CAT 1 -b"
 if [ "$show_commands" = true ]; then
   echo "$(cat -b "$filename")" "$("./s21_cat" -b "$filename")" -s $q
 fi
-diff <(cat -b "$filename") <("./s21_cat" -b "$filename") -s $q
+diff_output=$(diff <(cat -b "$filename") <("./s21_cat" -b "$filename") -s $q)
 
 line_num=0
-while IFS= read -r line1 && IFS= read -r line2 <&3; do
-  if [[ "$line1" != "$line2" ]]; then
-    echo "Строка $((++line_num)): $line2"
+while IFS= read -r diff_line; do
+  if [[ $diff_line == *"<"* ]]; then
+    echo "Строка $((++line_num)): $(echo "$diff_line" | cut -c2-)"
   fi
-done < "$file1" 3< "$file2
+done <<< "$diff_output"
