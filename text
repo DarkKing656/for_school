@@ -1,13 +1,21 @@
-   if (only_searched_str) { // Добавленная проверка
-                if (case_insensitive) {
-                    char* match_ptr = strcasestr(line, search_string);
-                    if (match_ptr != NULL) {
-                        printf("%.*s", (int) strlen(search_string), match_ptr);
-                    }
-                } else {
-                    char* match_ptr = strstr(line, search_string);
-                    if (match_ptr != NULL) {
-                        printf("%.*s", (int) strlen(search_string), match_ptr);
-                    }
-                }
-            } else {
+void addNewlineIfNeeded() {
+    FILE* file = fopen("output.txt", "a+"); // Открываем файл в режиме добавления и чтения
+    
+    if (file == NULL) {
+        printf("Ошибка открытия файла.\n");
+        return;
+    }
+
+    fseek(file, -1, SEEK_END);  // Перейти к последнему символу файла
+
+    char last_char;
+    fread(&last_char, sizeof(char), 1, file);  // Чтение последнего символа
+
+    if (last_char != '\n') {
+        printf("\n");  // Добавление символа новой строки, если он отсутствует
+    }
+
+    fclose(file);
+    
+    remove("output.txt"); // Удаление файла
+}
