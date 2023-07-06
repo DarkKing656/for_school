@@ -1,15 +1,9 @@
-void checkNewline(const char* line) {
-    int hasNewline = 0;
+file1="путь_к_первому_файлу"
+file2="путь_к_второму_файлу"
 
-    // Проверяем каждый символ строки
-    for (int i = 0; i < strlen(line); i++) {
-        if (line[i] == '\n') {
-            hasNewline = 1; // Обнаружен символ "\n"
-            break;
-        }
-    }
-
-    if (!hasNewline) {
-        printf("\n"); // Выводим символ новой строки
-    }
-}
+# Чтение файлов построчно и сравнение строк
+while IFS= read -r line1 && IFS= read -r line2 <&3; do
+  if [[ "$line1" != "$line2" ]]; then
+    echo "Строка $((++line_num)): $line2"
+  fi
+done <"$file1" 3<"$file2"
