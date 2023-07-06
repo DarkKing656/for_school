@@ -1,7 +1,18 @@
-file1="путь_к_первому_файлу"
-file2="путь_к_второму_файлу"
 
-# Чтение файлов построчно и сравнение строк
+# SETTINGS:
+# ---------
+filename=y.txt;
+q="-q"; # delete -q for verbose mode
+show_commands=true;
+file1="/dev/fd/63"
+file2="/dev/fd/62"
+# ---------
+decor=---------------------------------------------
+echo echo "$decor" *CAT 1 -b
+if [ "$show_commands" = true ]; then
+echo  {cat -b "$filename"}  {./s21_cat -b "$filename"} -s $q
+fi
+diff <(cat -b "$filename") <(./s21_cat -b "$filename") -s $q
 while IFS= read -r line1 && IFS= read -r line2 <&3; do
   if [[ "$line1" != "$line2" ]]; then
     echo "Строка $((++line_num)): $line2"
