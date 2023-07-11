@@ -1,9 +1,39 @@
+long double my_fabs(long double x) {
+    if (x < 0)
+        return -x; // если число отрицательное, возвращаем его с противоположным знаком
 
-diff_output=$(diff <(cat -b "$filename") <("./s21_cat" -b "$filename"))
+    return x; // если число положительное или ноль, возвращаем его без изменений
+}
+long double my_ceil(long double x) {
+    long long intPart = (long long)x; // получаем целую часть числа
 
-line_num=0
-while IFS= read -r diff_line; do
-  if [[ $diff_line == *"<"* ]]; then
-    echo "Строка $((++line_num))"
-  fi
-done <<< "$diff_output"
+    if (x <= 0 && x == (long double)intPart)
+        return x; // число уже является целым, возвращаем его
+
+    if (x > 0 && x >= (long double)intPart)
+        return (x + 1); // округляем положительное число вверх
+
+    return intPart; // округляем отрицательное число вверх
+}
+
+long double my_floor(long double x) {
+    long long intPart = (long long)x; // получаем целую часть числа
+
+    if (x >= 0 && x == (long double)intPart)
+        return x; // число уже является целым, возвращаем его
+
+    if (x < 0 && x <= (long double)intPart)
+        return (x - 1); // округляем отрицательное число вниз
+
+    return intPart; // округляем положительное число вниз
+}
+
+long double my_fmod(long double dividend, long double divisor) {
+    if (divisor == 0)
+        return 0; // обработка деления на ноль, возврат 0
+
+    while (dividend >= divisor)
+        dividend -= divisor;
+
+    return dividend;
+}
